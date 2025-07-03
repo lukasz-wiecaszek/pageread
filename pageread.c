@@ -163,11 +163,15 @@ int main(int argc, char** argv)
         for (int j = 0; j < nbytes; j++) {
             unsigned char c = p[i * PAGE_SIZE + j];
             if (dump) {
-                if ((j > 0) && ((j % 16) == 0))
-                    printf("%02x \n", c);
+                fprintf(stdout, "%02x ", c);
+                if (((j + 1) % 16) == 0)
+                    printf("\n");
             }
             retval += c;
         }
+        if (dump)
+            if ((nbytes % 16) != 0)
+                printf("\n");
     }
 
     if (munmap(map_base, map_size) == -1) {
