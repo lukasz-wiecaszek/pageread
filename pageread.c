@@ -22,31 +22,31 @@
 #include <version.h>
 
 #define DEVMEM_FILE "/dev/mem"
-#define PAGE_SIZE 4096UL
-#define PAGE_MASK (PAGE_SIZE - 1)
-#define NPAGES 1
-#define NBYTES 1
+#define PAGE_SIZE   4096UL
+#define PAGE_MASK   (PAGE_SIZE - 1)
+#define NPAGES      1
+#define NBYTES      1
 
-static void print_usage(const char *progname)
+static void print_usage(const char* progname)
 {
-    fprintf(stderr, "\nUsage: %s [option(s)]\n"
-        "\t -a|--addr=<value>     : HPA address to start reading pages from\n"
-        "\t[-p|--pages=<value>]   : Number of pages to span (default: 1)\n"
-        "\t[-b|--bytes=<value>]   : Number of bytes to read from each page (default: 1)\n"
-        "\t[-d|--dump]            : Dump read data to the console (default: Data are not dumped)\n"
-        "\t[-c|--cached]          : Use cached mappings (default: Memory access is not cached)\n"
-        "\t[-h|--help]            : Print this help message",
-        progname
-    );
+    fprintf(stderr,
+            "\nUsage: %s [option(s)]\n"
+            "\t -a|--addr=<value>     : HPA address to start reading pages from\n"
+            "\t[-p|--pages=<value>]   : Number of pages to span (default: 1)\n"
+            "\t[-b|--bytes=<value>]   : Number of bytes to read from each page (default: 1)\n"
+            "\t[-d|--dump]            : Dump read data to the console (default: Data are not dumped)\n"
+            "\t[-c|--cached]          : Use cached mappings (default: Memory access is not cached)\n"
+            "\t[-h|--help]            : Print this help message",
+            progname);
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
     int retval = 0;
     int fd;
-    void *map_base;
+    void* map_base;
     size_t map_size;
-    char *p;
+    char* p;
     unsigned long long hpa = 0;
     long npages = NPAGES;
     long nbytes = NBYTES;
@@ -56,13 +56,13 @@ int main(int argc, char **argv)
     fprintf(stdout, "%s - version: %s\n", argv[0], PROJECT_VER);
 
     static const struct option long_options[] = {
-        {"addr",      required_argument, 0, 'a'},
-        {"pages",     required_argument, 0, 'p'},
-        {"bytes",     required_argument, 0, 'b'},
-        {"dump",      no_argument,       0, 'd'},
-        {"cached",    no_argument,       0, 'c'},
-        {"help",      no_argument,       0, 'h'},
-        {0, 0, 0, 0}
+        {  "addr", required_argument, 0, 'a'},
+        { "pages", required_argument, 0, 'p'},
+        { "bytes", required_argument, 0, 'b'},
+        {  "dump",       no_argument, 0, 'd'},
+        {"cached",       no_argument, 0, 'c'},
+        {  "help",       no_argument, 0, 'h'},
+        {       0,                 0, 0,   0}
     };
 
     for (;;) {
@@ -128,14 +128,16 @@ int main(int argc, char **argv)
 
     if (cached) {
         if ((fd = open(DEVMEM_FILE, O_RDONLY | O_SYNC)) == -1) {
-            fprintf(stderr, "open(%s, O_RDONLY | O_SYNC) failed with code %d (%s)\n",
-                DEVMEM_FILE, errno, strerror(errno));
+            fprintf(stderr, "open(%s, O_RDONLY | O_SYNC) failed with code %d (%s)\n", DEVMEM_FILE, errno, strerror(errno));
             exit(EXIT_FAILURE);
         }
     } else {
         if ((fd = open(DEVMEM_FILE, O_RDONLY | O_SYNC | O_DSYNC)) == -1) {
-            fprintf(stderr, "open(%s, O_RDONLY | O_SYNC | O_DSYNC) failed with code %d (%s)\n",
-                DEVMEM_FILE, errno, strerror(errno));
+            fprintf(stderr,
+                    "open(%s, O_RDONLY | O_SYNC | O_DSYNC) failed with code %d (%s)\n",
+                    DEVMEM_FILE,
+                    errno,
+                    strerror(errno));
             exit(EXIT_FAILURE);
         }
     }
@@ -143,9 +145,13 @@ int main(int argc, char **argv)
 
     map_size = npages * PAGE_SIZE;
     map_base = mmap(0, map_size, PROT_READ, MAP_SHARED, fd, hpa & ~PAGE_MASK);
-    if (map_base == (void *) -1) {
-        fprintf(stderr, "mmap(0, 0x%zx, PROT_READ, MAP_SHARED, fd, 0x%llx) failed with code %d (%s)\n",
-            map_size, hpa, errno, strerror(errno));
+    if (map_base == (void*)-1) {
+        fprintf(stderr,
+                "mmap(0, 0x%zx, PROT_READ, MAP_SHARED, fd, 0x%llx) failed with code %d (%s)\n",
+                map_size,
+                hpa,
+                errno,
+                strerror(errno));
         exit(EXIT_FAILURE);
     }
 
@@ -153,20 +159,19 @@ int main(int argc, char **argv)
 
     for (long i = 0; i < npages; i++) {
         if (dump)
-            printf("page: %ld\n", i);
+            fprintf(stdout, "page: %ld\n", i);
         for (int j = 0; j < nbytes; j++) {
             unsigned char c = p[i * PAGE_SIZE + j];
             if (dump) {
                 if ((j > 0) && ((j % 16) == 0))
-                printf("%02x \n", c);
+                    printf("%02x \n", c);
             }
             retval += c;
         }
     }
 
     if (munmap(map_base, map_size) == -1) {
-        fprintf(stderr, "munmap(%p, 0x%zx) failed with code %d (%s)\n",
-            map_base, map_size, errno, strerror(errno));
+        fprintf(stderr, "munmap(%p, 0x%zx) failed with code %d (%s)\n", map_base, map_size, errno, strerror(errno));
         exit(EXIT_FAILURE);
     }
     close(fd);
@@ -174,4 +179,3 @@ int main(int argc, char **argv)
 
     return retval;
 }
-
